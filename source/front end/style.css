@@ -1,0 +1,389 @@
+*{
+    margin: 0;
+    padding: 0;
+    font-size: 1.5vw;
+    color: rgba(255,255,255,0.6);
+}
+a{
+    text-decoration: none;
+}
+html{
+    scroll-snap-type: y mandatory;
+    overflow: scroll;
+    height: 100vh;
+    width: 100vw;
+    scroll-behavior: smooth;
+}
+section{
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+}
+
+#section1 { 
+    width: 100%;
+    background-color: #faedbb;
+    border: 2px solid transparent;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* .left-container, .right-container {
+    padding: 20px;
+    box-sizing: border-box;
+    max-width: 50%;  
+}
+
+
+
+.left-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.right-container {
+    max-width: 100%; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: auto;
+}
+
+
+@media (max-width: 768px) {
+    #section1 {
+        flex-direction: column;
+    }
+} */
+
+
+
+
+.nav{
+    position: fixed;
+    min-width:60px;
+    min-height: 400px;
+    width: 5vw;
+    height: 90vh;
+    background:rgba(0,0,0,0.8);
+    border-radius: 1vw;
+    overflow: hidden;
+    transition: 0.5s;
+    margin-left: 0.5vw;
+    z-index: 1000;
+}
+.nav:hover{
+    width: 15vw;
+}
+
+.icon{
+    width:14vw;
+    height:10vh;
+    margin-left: 0.4vw;
+    margin-top: 4vh;
+    display: flex;
+}
+.icon-img{
+    width: 4.2vw;
+    height: 4.2vw;
+    border-radius: 50%;
+    border: 0.2vw solid rgba(255,255,255,0.3);
+    overflow: hidden;
+}
+.icon-img img{
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.icon-con {
+    height: 8vh;
+    margin-left: 2vw;
+}
+.icon-con p {
+    padding-top: 0.2vw;
+}
+.icon-con h2 {
+    font-weight: bold;
+}
+
+.line{
+    width: 3vw;
+    height: 0.2vw;
+    background-color: rgba(245, 253,255,0.5);
+    margin: 1vw 0.8vw;
+    transition: 0.5s;
+}
+
+.nav:hover .line{
+    width: 13vw;
+}
+
+.title{
+    width: 3vw;
+    height: auto;
+    margin-left: 0.8vw;
+    margin-bottom: 1vw;
+}
+.title p {
+    font-size: 1.2vw;
+}
+.menu{
+    width: 13vw;
+    margin-left: 0.8vw;
+}
+.item{
+    display: flex;
+    position:relative;
+    transition: 0.5s;
+    border-radius: 5px;
+    height: 3.5vw;
+    margin-bottom: 2vh;
+}
+.item:hover{
+    background:rgba(255,255,255,0.1);
+}
+.licon{
+    font-size: 3vw;
+    display: flex;
+    justify-content: center;
+}
+
+.con{
+    width: 0;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.5s;
+    overflow: hidden;
+    position: relative;
+    opacity: 0;
+
+}
+.nav:hover .con{
+    width: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+}
+.light{
+width: 0.5vw;
+height: 3.2vw;
+background: red;
+position: absolute;
+left: -0.8vw;
+transition: 0.5s;
+border-top-right-radius: 0.3vw;
+border-bottom-right-radius:0.3vw;
+opacity: 0;
+}
+.item:hover .light{
+    opacity: 1;
+}
+
+#map{
+    width: 80vw;
+    height: 75vh;
+    background-color: aqua;
+    margin-left: 12vw;
+    margin-top: 5vh;
+    float: left;
+    border-radius: 2vw;
+}
+
+.button-container {
+    margin-top: 2vh;
+    display: flex;
+    float: left;
+    gap: 0.5vw;
+    width: 100vw;
+    margin-left: 9.5vw;
+}
+
+
+.button-container i {
+    color: black;
+    font-size: 1vw;
+    padding: 0.1vw;
+}
+
+
+
+select {
+    color: black;
+    background-color: white;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    border-radius: 0.5vw;
+    appearance: none;
+    width: 15vw;
+    margin-left: 2vw;
+    align-items: center;
+}
+
+option {
+
+    color:black;
+    text-align: center;
+}
+button,option:hover,#routeSelect {
+
+    cursor: pointer;
+    border: none;
+    height: 5vh;
+    width: 13vw;
+    border-radius: 0.3vw;
+    box-shadow: 0.2vw 0.2vw 0.7vw 0vw lightgray;
+    align-items: center;
+    transition: 0.5s;
+    color: black;
+}
+button:hover,select:hover {
+    scale: 0.97;
+    box-shadow: none;
+    background-color: antiquewhite;
+}
+/* option:hover{
+    background-color: antiquewhite;
+    color: #fff;
+    transition: background-color 0.5s ease;
+} */
+
+/* #myPieChart, #mySecondPieChart {
+    display: block;
+    width: 20vw;
+    height: 20vh;
+} */
+
+
+
+/* 这里是section4 */
+.info-container{
+    display: flex; /* 使用 flexbox 布局 */
+    justify-content: space-around; /* 盒子之间的空间平均分配 */
+    align-items: center; /* 在容器内垂直居中对齐 */
+    height: 100vh; /* 让容器高度等于视口高度，创建全屏效果 */
+    width: 80vw;
+    margin-left: 12vw;
+
+}
+
+.card-background{
+    background:rgba(0,0,0,0.3);
+    width: 22vw;
+    height: 80vh;
+    border-radius: 3vw;
+    transition: 0.5s;
+}
+.card-background:hover{
+    scale: 1.1;
+}
+.profile-info{
+    padding: 3vw;
+    color: black;
+    font-size: 1.3vw;
+    font-family: Arial, Helvetica, sans-serif;
+}
+#old-password ,#new-password,#confirm-new-password{
+    width:100%;
+    height:8vh;
+    border-radius: 10px;
+    border: 1px solid #fff;
+    padding: 10px 0 10px 30px;
+    box-sizing: border-box;
+    background-color: transparent;
+    outline: none;
+    color: #716892;
+    font-size: 0.7vw;
+
+}
+#Info-Password:focus{
+    border: 1px solid #9faff8;
+}
+
+.btn{
+    width: 100%;
+    height: 50px;
+    border: 0;
+    background-color: #fff;
+    border-radius: 5px;
+    color: #000;
+    text-align: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: .2s;
+}
+
+/*section截止*/
+
+
+.info-box {
+
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+    width: 70vw;
+    height: 80vh; 
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.9);
+    margin-left: 17vw;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2vw;
+}
+
+.list {
+    max-height: 80%;
+    overflow-y: auto;
+    border: 0.2vw solid #d4d4d4;
+    border-radius: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 0.2vw solid #ddd;
+    margin-top: 5px;
+}
+#searchBox{
+    width:40%;
+    height:8vh;
+    border-radius: 10px;
+    border: 1px solid #fff;
+    padding: 10px 0 10px 30px;
+    box-sizing: border-box;
+    background-color: transparent;
+    outline: none;
+    color: black;
+    font-size: 1vw;
+}
+#searchBox:focus{
+    border: 1px solid #9faff8;
+    
+}
+
+
+.chart-box{
+    background:rgba(0,0,0,0.3);
+    margin-left: 1vw;
+    height: 45%;
+    width: 45%;
+    border-radius: 1vw;
+    align-items: center;
+    justify-content: center;
+  }

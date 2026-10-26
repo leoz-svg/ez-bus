@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="EZ Bus：Suncorp Stadium 周边人流与公交调度仿真。体验地图、公交增减与数据联动，查看 Python / Flask-SocketIO 团队项目实现。">
+  <meta name="theme-color" content="#34344e"><title>EZ Bus · 交通仿真与调度可视化</title>
+  <link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="style.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+<header><nav class="wrap"><a class="brand" href="#"><span class="brandmark">EZ</span> EZ BUS <small>TRANSIT LAB</small></a><div class="navlinks"><a href="#simulation">交互演示</a><a href="#engineering">技术说明</a><a href="https://leoz-svg.github.io/ai-project-portfolio/">全部作品 ↗</a></div></nav></header>
+<main class="wrap">
+  <section class="hero">
+    <div><p class="eyebrow">UQ · DECO3801 · TEAM PROJECT / 2023</p><h1>看见人流，<br>理解每一次<span>公交调度。</span></h1><p class="lead">大型赛事散场之后，怎样观察拥堵、分配公交？<br>EZ Bus 把人流仿真、路线地图和调度操作放进同一个工作台。</p><div class="actions"><a class="button primary" href="#simulation">体验仿真 <span>↓</span></a><a class="button" href="https://github.com/leoz-svg/ez-bus">查看项目源码 ↗</a></div></div>
+    <aside class="project-card"><div class="card-top"><span class="status-dot"></span> PROJECT BRIEF <span>04</span></div><dl><div><dt>场景</dt><dd>Suncorp Stadium · Brisbane</dd></div><div><dt>系统</dt><dd>交通数据可视化与管理原型</dd></div><div><dt>原始架构</dt><dd>JavaScript ↔ Flask-SocketIO ↔ Python</dd></div><div><dt>核心方法</dt><dd>100 × 100 网格 · 规则仿真 · 实时事件</dd></div></dl><div class="tags"><span>HTML / JavaScript</span><span>Leaflet</span><span>Chart.js</span><span>Python</span></div></aside>
+  </section>
+  <section class="workspace" id="simulation" aria-labelledby="simulation-title">
+    <div class="section-heading"><div><p class="eyebrow">01 / INTERACTIVE SIMULATION</p><h2 id="simulation-title">公交调度工作台</h2></div><span class="mode">浏览器仿真 · 无需登录</span></div>
+    <p class="section-intro">点「开始仿真」，观察人流变化；选择一条线路增减公交，再查看地图和指标。所有操作仅影响你当前的演示。</p>
+    <div class="notice">这是原 Python 规则的 JavaScript 展示版，使用项目自带道路与线路坐标；不是实时交通数据。GitHub Pages 不运行 Python 服务器。</div>
+    <noscript><p class="notice">请启用 JavaScript 体验仿真。下方原项目截图与技术说明仍可阅读。</p></noscript>
+    <div class="metrics" aria-label="当前仿真指标">
+      <div><span>已生成人数</span><strong id="generated">0</strong><small>本次累计输入</small></div>
+      <div><span>地图内人数</span><strong id="remaining">0</strong><small>行走中 + 候车中</small></div>
+      <div><span>已上车人数</span><strong id="boarded">0</strong><small>模型中的离场人数</small></div>
+      <div><span>运行公交</span><strong id="buses">3</strong><small>三条线路合计</small></div>
+    </div>
+    <div class="sim-layout">
+      <div class="map-panel">
+        <div class="map-heading"><span><b>SUNCORP AREA</b> <small>项目路网示意</small></span><span id="clock">仿真步 0</span></div>
+        <div class="map-stage"><canvas id="map" width="800" height="650" role="img" aria-label="人流、公交和线路的动态网格地图。精确人数见上方指标及右侧车站列表。"></canvas><span class="north">N ↑</span><div class="map-key"><span><i class="dot bus-dot"></i>公交</span><span><i class="dot stop-dot"></i>车站</span><span><i class="heat-dot"></i>人流密度</span></div></div>
+        <div class="map-footer"><label><input type="checkbox" id="showHeat" checked> 人流热区</label><label><input type="checkbox" id="showRoutes" checked> 公交线路</label><span>北向朝上 · 非导航地图</span></div>
+      </div>
+      <aside class="controls" aria-label="仿真控制">
+        <div class="control-heading"><span class="eyebrow">DISPATCH CONTROL</span><span class="badge" id="runState">加载中</span></div>
+        <div class="run-controls"><button class="button primary" id="toggle" disabled>开始仿真</button><button class="button" id="reset" disabled>重置</button></div>
+        <label class="field" for="speed">播放速度<select id="speed"><option value="1">1× · 每秒 5 步</option><option value="4">4× · 每秒 20 步</option><option value="10">10× · 每秒 50 步</option></select></label>
+        <hr><label class="field" for="route">选择公交线路<select id="route"><option value="61">61 号线路</option><option value="412">412 号线路</option><option value="475">475 号线路</option></select></label>
+        <div class="route-bars" id="routeBars"></div>
+        <div class="run-controls"><button class="button" id="add" disabled>＋ 增加公交</button><button class="button" id="remove" disabled>− 减少公交</button></div>
+        <button class="button wide" id="people" disabled>增加一批人流（30 人）</button>
+        <p id="feedback" class="feedback" role="status" aria-live="polite">正在加载原项目路网…</p>
+        <hr><div class="station-heading"><h3>车站候车</h3><span id="waiting">0 人</span></div><div id="stationRows" class="station-rows"></div>
+        <button class="export" id="export" disabled>导出当前指标 CSV ↓</button>
+      </aside>
+    </div>
+    <div class="under-map"><p>人数口径：已生成 = 地图内 + 已上车。自动生成人流沿用原代码的 67 批 × 30 人，共 2,010 人；手动增加会叠加。</p><p>演示新增了暂停、固定种子重置、精确计数和导出。与 Python 使用不同随机数生成器，因此每一步轨迹不完全相同。</p></div>
+  </section>
+  <section class="section" id="engineering">
+    <div class="section-heading"><div><p class="eyebrow">02 / HOW IT WORKS</p><h2>从坐标数据，到可操作的界面</h2></div><a class="textlink" href="https://github.com/leoz-svg/ez-bus#readme">完整说明 ↗</a></div>
+    <div class="flow"><div><span>01 · INPUT</span><h3>CSV 路网与线路</h3><p>经纬度映射为 100 × 100 网格，标记道路、车站和三条公交线路。</p></div><div><span>02 · SIMULATION</span><h3>Python 规则更新</h3><p>人群随机向目的站移动；公交按线路循环行进，在站点触发上车。</p></div><div><span>03 · TRANSPORT</span><h3>Socket.IO 事件</h3><p>后端推送状态，前端发送增减公交指令，连接仿真与操作。</p></div><div><span>04 · INTERFACE</span><h3>地图 + 图表联动</h3><p>原版使用 Leaflet 热力图、公交标记与 Chart.js 图表展示状态。</p></div></div>
+    <div class="engineering-grid"><article><h3>涉及的技术问题</h3><ul><li>经纬度与网格坐标的双向转换。</li><li>人群状态、公交位置与图表数据同步。</li><li>后台线程和调度事件同时修改状态。</li><li>参数检查、空线路处理与失败反馈。</li></ul></article><article><h3>原项目与本次发布</h3><p>保留团队原有前后端，修复同源连接、空数据、越界访问和线程同步等运行问题；另外新增免后端的浏览器演示。</p><p>原版登录使用前端样例数据与 localStorage，不能代表安全认证。本页不收集账号或密码。</p></article><article><h3>关于 AI 与算法</h3><p>这是规则驱动的交通仿真项目，代码未接入大模型、Agent 或 MCP。论文记录的 AI 使用是辅助编程与环境配置。</p><p>原后端的实验线路建议使用阈值判断与 DFS 路径搜索；它不保证全局最短或最优调度，本页未移植该实验功能。</p></article></div>
+  </section>
+  <section class="section" id="original"><div class="section-heading"><div><p class="eyebrow">03 / ORIGINAL PROJECT</p><h2>回到 2023 年的团队原型</h2></div><span class="muted">以下截图来自提交的项目报告</span></div><div class="figures"><figure><a href="assets/original-dashboard.webp"><img src="assets/original-dashboard.webp" alt="原项目的四个图表：人流、站点分布、线路公交数量及车辆资源" loading="lazy"></a><figcaption>原版 Dashboard · 四个图表组织人流与公交信息。</figcaption></figure><figure><a href="assets/original-map.webp"><img src="assets/original-map.webp" alt="原项目 Leaflet 地图、热力图和公交调度按钮" loading="lazy"></a><figcaption>原版 Leaflet 地图 · 热区、线路、车辆标记与调度操作。</figcaption></figure></div></section>
+  <section class="section last"><div class="section-heading"><div><p class="eyebrow">04 / SCOPE & REPRODUCTION</p><h2>可以复现，也说明边界</h2></div></div><div class="details-grid"><details open><summary>这个模型简化了什么？</summary><p>行人按预设目的站随机移动；公交按离散路线点循环，末尾直接回到起点。到站就可上车，没有座位容量、红绿灯、真实旅行时间或车辆调度约束。道路单元的 80 人阈值约束移动，不限制出生点瞬时人数。不能把演示数字作为真实运营预测。</p></details><details open><summary>如何运行完整前后端？</summary><p>下载 GitHub 仓库，安装 requirements.txt，运行 source/Backend/FLASK.py，访问本机 5000 端口。服务同时提供原前端与 Socket.IO 接口；详细步骤见仓库 README。该服务仅用于本机教学复现。</p></details><details open><summary>团队贡献怎样说明？</summary><p>原项目由 UQ DECO3801 的 ;p Winking 团队完成，Haoran Zheng 是团队成员。本展示保留团队归属；个人具体分工应结合真实经历说明，不将完整系统标为个人独立作品。</p></details><details open><summary>这个网页部署了哪些功能？</summary><p>GitHub Pages 托管静态网页；人流与公交规则在浏览器中计算，支持开始、暂停、线路公交增减、追加人流、重置与指标导出。Python 服务、原登录流程与实验线路建议未作为公网服务运行。</p></details></div><div class="actions"><a class="button primary" href="https://github.com/leoz-svg/ez-bus">源码与安装说明 ↗</a><a class="button" href="https://leoz-svg.github.io/ai-project-portfolio/">返回作品集</a></div></section>
+</main><footer class="wrap"><span>EZ BUS · ;p Winking Team · UQ DECO3801</span><span>原项目 2023 / 作品集适配 2026</span></footer>
+</body></html>

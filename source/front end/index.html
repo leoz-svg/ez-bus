@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./font-awesome/css/font-awesome.min.css">
+    <script src="./javascript/drop-down-btn.js"></script>
+    <script src="./javascript/login_script.js"></script>
+    <!-- simulation -->
+    <link rel="stylesheet" href="vendor/leaflet.css"/>
+    <script src="include/p5.js"></script>
+    <script src="vendor/leaflet.js"></script>
+    <script src="vendor/socket.io.min.js"></script>
+    <script src="vendor/leaflet-heat.js"></script>
+    <script src="vendor/papaparse.min.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    
+    <title>EZBUS</title>
+
+</head>
+<body>
+<div style="position:fixed;bottom:0;left:0;right:0;background:#fff4cb;padding:5px;z-index:9999;text-align:center;font-size:12px">Academic simulation · fictional data · browser-only login is not authentication</div>
+
+    <div class="nav">
+        <div class="icon">
+            <div class="icon-img"><img src="./icon/EZ bus.png" alt=""></div>
+            <div class="icon-con">
+            <p>Good day</p>
+            <h2 id="UserName">Harry</h2>
+            </div>
+        </div>
+        <div class="line"></div>
+    <div class="title">
+        <p>Menu</p>
+    </div>
+
+    <div class="menu">
+        <div class="innerbox">
+            <div class="item">
+                <div class="light"></div>
+                <div class="licon">
+                    <i class="fa fa-area-chart" aria-hidden="true"></i>
+                </div>
+                <div class="con"><a href="#section1">&nbsp;Dashboard</a></div>
+            </div>
+
+            <div class="item">
+                <div class="light"></div>
+                <div class="licon">
+                    <i class="fa fa-map" aria-hidden="true"></i>
+                </div>
+                <div class="con"><a href="#section2">Map</a></div>
+            </div>
+
+            <div class="item">
+                <div class="light"></div>
+                <div class="licon">
+                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                </div>
+                <div class="con"><a href="#section3">Timetable</a></div>
+            </div>
+
+            <div class="item">
+                <div class="light"></div>
+                <div class="licon">
+                    <i class="fa fa-user-circle-o" aria-hidden="true"></i>
+                </div>
+                <div class="con"><a href="#section4">Info</a></div>
+            </div>
+        </div>
+
+
+        <div class="item">
+            <div class="light"></div>
+            <div class="licon">
+                <i class="fa fa-sign-out" aria-hidden="true"></i>
+            </div>
+            <div class="con" onclick="handleLogout(); return false;"><a href="#">Logout</a></div>
+        </div>
+    </div>
+    </div>
+
+
+        <section id="section1" style="display: flex;background-color: #faedbb;flex-wrap: wrap;justify-content: center;">
+            <div id="box1" class="chart-box" ><canvas id="myPieChart" style="margin-left: 20%;"></canvas></div>
+            <div id="box2" class="chart-box" ><canvas id="mySecondPieChart" style="margin-left: 25%;"></canvas></div>
+            <div id="box4" class="chart-box" ><canvas id="myBarChart1" style="margin-left: 10%;"></canvas></div>
+            <div id="box3" class="chart-box" ><canvas id="myBarChart2" style="margin-left: 10%;"></canvas></div>
+        </section>
+
+
+
+
+        <section id="section2" style="background-color: #716892;">
+            <div id="map"></div>
+    
+
+            <div class="button-container">
+                <select id="routeSelect" name="routeSelect">
+                    <option value="61">Select Bus</option>
+                    <option value="61">61</option>
+                    <option value="475">475</option>
+                    <option value="412">412</option>
+
+                </select>
+                <button id="toggleSimulation">Start</button>
+                <button id="addBusButton"><i class="fa fa-arrow-up" aria-hidden="true"></i>Add Bus</button>
+                <button id="decreaseButton"><i class="fa fa-arrow-down" aria-hidden="true"></i>Less Bus</button>
+                <button id="toggleSimulation1">more people </button>
+                <button id="addRouteButton">Add new Route</button>
+
+            </div>
+            <!-- <div class="center">
+                <button id="toggleSimulation">Start</button>
+                <button id="toggleSimulation1">more people </button>
+            </div> -->
+
+        </section>
+        <section id="section3" style="background-color:#faedbb;">
+            <br><br><div class="info-box">
+                <div class="info-header">
+                    <h3>Driver Information</h3>
+                    <input type="search" placeholder="Search..." id="searchBox">
+                </div>
+        
+                <div class="list">
+                    <table id="driverTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Gender</th>
+                                <th>Route</th>
+                                <th>Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        
+        <section id="section4" style="background-color: #716892;">
+            
+            <div class="info-container">
+                    
+                    <div class="card-background">
+                        <div class="profile-info">
+                            <h1>Profile Information</h1><br><br>
+                            Name: <span id="profileName"></span><br><br>
+                            Username: <span id="profileUsername"></span><br><br>
+                            Email: <span id="profileEmail"></span><br><br>
+                            Phone: <span id="profilePhone"></span><br><br>
+                            Position: <span id="profilePosition"></span><br><br>
+                        </div>
+                    </div>
+
+                    <div class="card-background">
+                        <div class="profile-info">
+                        <h1>Security Information</h1><br><br>
+                         <div> <span id="profileTime"></span></div><br><br>
+                         <div>IP Address: <span id="profileUserIp"></span></div><br><br>
+                         <div>Register date: <span id="profileRegister"></span></div><br><br>
+                        </div>
+                    </div>
+
+                    <div class="card-background">
+                        <div class="profile-info">
+                            <h1>Password change</h1><br><br>
+                            <input type="password" id="old-password" placeholder="Please Enter Old Password"/><br><br>
+                            <input type="password" id="new-password" placeholder="Please Enter New Password"/><br><br>
+                            <input type="password" id="confirm-new-password" placeholder="Please Enter New Password Again"/><br><br>
+                            <button class="btn"  onclick="changePassword()">Login</button>
+                        </div>
+                        
+                    </div>
+                </div>
+
+
+
+            
+         
+
+            </div>
+
+
+        
+        </section>
+
+
+        <script src="./javascript/loadlocaldata.js"></script>
+        <!-- <script src="./javascript/chart1.js"></script> -->
+        <script src="./javascript/driver-list.js"></script>
+        <script src="./javascript/app.js"></script>
+</body>
+</html>
