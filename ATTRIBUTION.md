@@ -33,3 +33,12 @@ EZ Bus（2023），UQ DECO3801，**;p Winking Team**。
 第三方资源遵守其各自许可。原团队作品没有在输入材料中提供可确认的统一开放许可，本仓库不代替其他成员授予额外授权。
 
 本次固定的前端依赖：Chart.js 4.4.8、Leaflet 1.9.4、socket.io-client 4.8.1、PapaParse 5.5.3、Leaflet.heat 0.2.0；从 npm 官方 registry 包提取分发文件与对应 LICENSE，位于 source/front end/vendor。
+
+## 地图视觉升级（2026-10-27）
+
+在线演示使用 Leaflet 1.9.4（BSD-2-Clause，许可位于 docs/vendor/leaflet.LICENSE）及 Esri World Topographic Map 瓦片。地图保留 Esri 和数据提供者署名。瓦片按访问者当前视图在线加载，不下载打包、不进行离线批量缓存。
+
+- 地图服务：https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer
+- docs/assets/map.geojson 是原项目 road_coordinates_100X100.csv 生成的本地道路示意回退，不是 OpenStreetMap 数据。
+- docs/assets/network.json 中 geometry / displayPoints 来源于原线路 CSV，仅用于更平滑的视觉表现。
+- 公交图标由 SVG 代码绘制，不包含车辆品牌或第三方车辆图片。
