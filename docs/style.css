@@ -22,3 +22,33 @@
 #map canvas{max-height:none;aspect-ratio:auto}
 #map .leaflet-pane.leaflet-geography-pane{filter:saturate(.8) brightness(1.015)}
 @media(max-width:760px){.map-key{bottom:65px}.map-footer>#mapStatus{display:block;flex-basis:100%;font-size:10px}.map-footer{flex-wrap:wrap}}
+
+/* Fixed-scale crowd overlay: colors describe simulated people per grid cell. */
+.heat-summary{display:grid;grid-template-columns:1.25fr 1fr 1.15fr;gap:12px 22px;padding:17px 20px 12px;background:#fffcf6;border-top:1px solid #ebe4d8}
+.heat-scale b{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#574a40}.heat-scale b small{font-weight:400;font-size:10px;color:#887a6a}
+.heat-ramp{height:8px;border-radius:6px;margin-top:9px;background:linear-gradient(90deg,#fac33a 0% 25%,#f67e1d 25% 50%,#e23927 50% 75%,#991b40 75% 100%)}
+.heat-ticks{display:flex;justify-content:space-between;font:10px/1.8 Consolas,monospace;color:#7d6b5c}
+.heat-peak{border-left:1px solid #e6ded3;padding-left:20px}.heat-peak>span,.heat-peak>small{display:block;font-size:10px;color:#8c7a69}.heat-peak strong{display:block;font:600 23px/1.5 Consolas,monospace;color:#a8323f}.heat-peak strong small{font:11px "Microsoft YaHei",sans-serif;color:#8c7a69}
+.heat-focus{align-self:center;font-size:12px;color:#665b50;cursor:pointer}.heat-focus input{accent-color:#b74235;vertical-align:middle}.heat-focus small{display:block;font-size:9px;color:#998c7d;padding-left:22px;margin-top:3px}
+.heat-caption{grid-column:1/-1;font-size:9px;line-height:1.6;color:#998c7d;margin:0}.heat-hidden .heat-scale{opacity:.4}
+#map.heat-focused .leaflet-geography-pane{filter:saturate(.15) opacity(.35)}
+#map.heat-focused .leaflet-roads-pane{opacity:.5}
+@media(max-width:1000px){.heat-summary{gap:10px 12px;padding:14px}.heat-peak{padding-left:12px}.heat-focus{grid-column:1/-1}.heat-focus small{display:inline;margin-left:5px;padding:0}.heat-summary{grid-template-columns:1fr 1fr}}
+
+.pedestrian-overlay{position:absolute;pointer-events:none;max-height:none;aspect-ratio:auto}
+.pedestrian-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 18px;background:#f6faf9;border-top:1px solid #e0e7e4;font-size:11px;color:#4b6968}
+.pedestrian-tools label{cursor:pointer;white-space:nowrap}.pedestrian-tools input{accent-color:#237c8c;vertical-align:middle}
+.pedestrian-tools button{border:1px solid #cdded9;border-radius:6px;background:#fff;padding:5px 10px;color:#326b70;font-size:11px}
+.pedestrian-tools>span{font-size:10px}.pedestrian-tools>small{flex-basis:100%;font-size:9px;line-height:1.6;color:#81938c}
+@media(max-width:760px){.pedestrian-tools{padding:12px;gap:8px 12px}.pedestrian-tools>span{flex-basis:100%}}
+
+/* Team prototype sections with a shared simulation, keyboard-accessible tabs. */
+[hidden]{display:none!important}.workspace-tabs{display:grid;grid-template-columns:repeat(4,1fr);background:#eeedf4;border:1px solid #dedce8;border-radius:12px;padding:7px;gap:7px;margin:22px 0 0}
+.workspace-tabs button{display:flex;align-items:center;justify-content:center;gap:13px;border:0;background:transparent;border-radius:8px;padding:13px;color:#827b91;text-align:left}.workspace-tabs button[aria-selected="true"]{background:#fff;color:#554969;box-shadow:0 2px 8px #41364e12}.workspace-tabs .fa{font-size:23px}.workspace-tabs span{font-size:13px;font-weight:650}.workspace-tabs small{display:block;font-size:10px;font-weight:400;margin-top:2px}
+.workspace-panel{min-width:0}.panel-heading{display:flex;justify-content:space-between;gap:18px;align-items:center;margin:20px 0}.panel-heading h3{font-size:19px;margin:0}.panel-heading p{font-size:12px;color:#85808f;margin:5px 0 0}.panel-actions{display:flex;gap:8px;flex-shrink:0}.panel-actions .button{font-size:11px;padding:8px 14px}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.chart-card{background:#fff;border:1px solid #dedee5;border-radius:12px;padding:22px}.chart-card h3{margin:0;font-size:15px}.chart-card>p{font-size:11px;color:#8b8392;min-height:34px}.chart-frame{height:230px;position:relative}.chart-frame canvas{aspect-ratio:auto;max-height:none}.chart-card .chart-values{margin-bottom:0;font-size:11px;min-height:0;color:#706578}
+.driver-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:15px}.driver-filters label{font-size:11px;color:#817789}.driver-filters input,.driver-filters select{display:block;width:100%;height:39px;border:1px solid #ddd7e4;background:#fff;border-radius:7px;padding:8px 12px;margin-top:7px;font-size:12px}.driver-table-wrap{max-height:440px;overflow:auto;border:1px solid #dedee5;border-radius:10px;background:#fff}.driver-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}.driver-table th{position:sticky;top:0;background:#eeedf4;color:#756480;font-size:11px;z-index:1}.driver-table td,.driver-table th{padding:12px 18px;border-bottom:1px solid #ece9f0}.driver-table tr:last-child td{border:0}.driver-table tbody tr:hover{background:#faf8fc}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.info-grid article{padding:24px;border:1px solid #dedee5;border-radius:12px;background:white}.info-grid article>.fa{font-size:27px;color:#8d7ba0;margin-bottom:18px}.info-grid p{font-size:12px;line-height:1.9;color:#82788b}.info-grid h3{font-size:16px}.info-grid dd{font-size:13px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){.workspace-tabs{padding:5px;gap:3px}.workspace-tabs button{padding:10px 2px;gap:6px;flex-direction:column;text-align:center}.workspace-tabs span{font-size:10px}.workspace-tabs small{font-size:9px}.workspace-tabs .fa{font-size:19px}.panel-heading{align-items:flex-start;flex-wrap:wrap}.dashboard-grid,.info-grid{grid-template-columns:1fr}.chart-frame{height:210px}.chart-card{padding:17px}.driver-filters{grid-template-columns:1fr 1fr}.driver-filters label:first-child{grid-column:1/-1}.driver-table td,.driver-table th{padding:10px 8px;font-size:11px}}
+
+.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-card,.chart-frame{min-width:0}.chart-frame canvas{max-width:100%}@media(max-width:760px){.dashboard-grid{grid-template-columns:minmax(0,1fr)}}

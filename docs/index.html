@@ -5,6 +5,7 @@
   <meta name="description" content="EZ Bus：Suncorp Stadium 周边人流与公交调度仿真。体验地图、公交增减与数据联动，查看 Python / Flask-SocketIO 团队项目实现。">
   <meta name="theme-color" content="#34344e"><title>EZ Bus · 交通仿真与调度可视化</title>
   <link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css"><script src="vendor/chart.umd.js"></script>
   <script src="vendor/leaflet.js"></script>
   <script type="module" src="app.mjs"></script>
 </head>
@@ -20,12 +21,19 @@
     <p class="section-intro">点「开始仿真」，观察人流变化；选择一条线路增减公交，再查看地图和指标。所有操作仅影响你当前的演示。</p>
     <div class="notice">这是原 Python 规则的 JavaScript 展示版。底图采用 Esri 街区地图，公交路径沿用项目坐标；车辆与人流不是实时数据。GitHub Pages 不运行 Python 服务器。</div>
     <noscript><p class="notice">请启用 JavaScript 体验仿真。下方原项目截图与技术说明仍可阅读。</p></noscript>
+<div class="workspace-tabs" role="tablist" aria-label="团队原型功能分区">
+<button type="button" id="tab-dashboard" role="tab" data-panel="dashboard" aria-controls="panel-dashboard" aria-selected="false" tabindex="-1"><i class="fa fa-area-chart" aria-hidden="true"></i><span>Dashboard<small>数据总览</small></span></button><button type="button" id="tab-map" role="tab" data-panel="map" aria-controls="panel-map" aria-selected="true" tabindex="0"><i class="fa fa-map" aria-hidden="true"></i><span>Map<small>地图调度</small></span></button><button type="button" id="tab-timetable" role="tab" data-panel="timetable" aria-controls="panel-timetable" aria-selected="false" tabindex="-1"><i class="fa fa-calendar" aria-hidden="true"></i><span>Timetable<small>司机列表</small></span></button><button type="button" id="tab-info" role="tab" data-panel="info" aria-controls="panel-info" aria-selected="false" tabindex="-1"><i class="fa fa-user-circle-o" aria-hidden="true"></i><span>Info<small>资料与说明</small></span></button></div>
     <div class="metrics" aria-label="当前仿真指标">
       <div><span>已生成人数</span><strong id="generated">0</strong><small>本次累计输入</small></div>
       <div><span>地图内人数</span><strong id="remaining">0</strong><small>行走中 + 候车中</small></div>
       <div><span>已上车人数</span><strong id="boarded">0</strong><small>模型中的离场人数</small></div>
       <div><span>运行公交</span><strong id="buses">3</strong><small>三条线路合计</small></div>
     </div>
+    <section id="panel-dashboard" class="workspace-panel" role="tabpanel" aria-labelledby="tab-dashboard" hidden>
+      <div class="panel-heading"><div><h3>调度数据总览</h3><p>原团队四图表布局 · 与地图共享同一份仿真状态</p></div><div class="panel-actions"><button type="button" class="button primary" id="dashboardRun" disabled>开始仿真</button><button type="button" class="button" id="dashboardReset" disabled>重置</button></div></div>
+      <p id="dashboardState" class="muted" role="status">正在加载仿真…</p><div class="dashboard-grid"><article class="chart-card"><h3>人流去向</h3><p>地图内人数与累计上车人数，二者之和为已生成人数。</p><div class="chart-frame"><canvas id="chart-population" role="img" aria-label="人流去向"></canvas></div><p class="chart-values" id="values-population"></p></article><article class="chart-card"><h3>站点候车分布</h3><p>各仿真站点当前网格内的候车人数。</p><div class="chart-frame"><canvas id="chart-stations" role="img" aria-label="站点候车分布"></canvas></div><p class="chart-values" id="values-stations"></p></article><article class="chart-card"><h3>线路车辆配置</h3><p>地图增减公交后，三条线路的车辆数同步更新。</p><div class="chart-frame"><canvas id="chart-routes" role="img" aria-label="线路车辆配置"></canvas></div><p class="chart-values" id="values-routes"></p></article><article class="chart-card"><h3>公交资源</h3><p>沿用原型 90 辆配置上限；空余表示可添加名额，不是真实车库库存。</p><div class="chart-frame"><canvas id="chart-fleet" role="img" aria-label="公交资源"></canvas></div><p class="chart-values" id="values-fleet"></p></article></div>
+    </section>
+    <section id="panel-map" class="workspace-panel" role="tabpanel" aria-labelledby="tab-map">
     <div class="sim-layout">
       <div class="map-panel">
         <div class="map-heading"><span><b>SUNCORP AREA</b> <small>BRISBANE · 街区地图</small></span><span id="clock">仿真步 0</span></div>
@@ -34,9 +42,15 @@
           <div class="map-route-legend" aria-label="选择线路"><button type="button" data-route="61" class="route-chip selected" style="--route:#326cbb">61</button><button type="button" data-route="412" class="route-chip" style="--route:#d17b3f">412</button><button type="button" data-route="475" class="route-chip" style="--route:#308771">475</button><span>模拟线路</span></div>
           <button type="button" id="mapHome" class="map-home" title="返回仿真区域" aria-label="返回仿真区域">⌖</button>
           <span class="north">N ↑</span>
-          <div class="map-key"><span><i class="dot bus-dot"></i>仿真公交</span><span><i class="dot stop-dot"></i>仿真车站</span><span><i class="heat-dot"></i>人流密度</span></div>
+          <div class="map-key"><span><i class="dot bus-dot"></i>仿真公交</span><span><i class="dot stop-dot"></i>仿真车站</span></div>
         </div>
-        <div class="map-footer"><label><input type="checkbox" id="showHeat" checked> 人流热区</label><label><input type="checkbox" id="showRoutes" checked> 公交线路</label><label><input type="checkbox" id="showBuildings" checked> 街区底图</label><span id="mapStatus" role="status">正在加载街区底图…</span></div>
+        <div class="pedestrian-tools"><label><input type="checkbox" id="showPeople"> 显示行人</label><button type="button" id="peopleZoom">放大查看人流</button><span id="peopleStatus" role="status">开启后，放大地图可查看行人</span><small>行人按仿真网格位置绘制；拥挤区域抽样显示，每格最多 5 人，不代表精确 GPS 位置。</small></div>
+        <div class="heat-summary" id="heatSummary">
+          <div class="heat-scale"><b>人流热区 <small>人 / 网格</small></b><div class="heat-ramp" aria-hidden="true"></div><div class="heat-ticks"><span>1–9</span><span>10–29</span><span>30–79</span><span>80+</span></div></div>
+          <div class="heat-peak"><span>当前最高网格</span><strong id="heatPeak">0 <small>人</small></strong><small id="heatNote">暂无人流</small></div>
+          <label class="heat-focus"><input type="checkbox" id="heatFocus"> 突出人流<small>淡化底图，保留线路与车辆</small></label>
+          <p class="heat-caption">固定色阶 · 中心颜色表示单格人数，外围渐变仅辅助定位；不代表真实拥堵风险。</p>
+        </div><div class="map-footer"><label><input type="checkbox" id="showHeat" checked> 人流热区</label><label><input type="checkbox" id="showRoutes" checked> 公交线路</label><label><input type="checkbox" id="showBuildings" checked> 街区底图</label><span id="mapStatus" role="status">正在加载街区底图…</span></div>
       </div>
       <aside class="controls" aria-label="仿真控制">
         <div class="control-heading"><span class="eyebrow">DISPATCH CONTROL</span><span class="badge" id="runState">加载中</span></div>
@@ -51,6 +65,19 @@
         <button class="export" id="export" disabled>导出当前指标 CSV ↓</button>
       </aside>
     </div>
+    </section>
+    <section id="panel-timetable" class="workspace-panel" role="tabpanel" aria-labelledby="tab-timetable" hidden>
+      <div class="panel-heading"><div><h3>司机信息 / Driver Information</h3><p>保留团队原型的 Timetable 分区：40 条虚构司机记录，可搜索及筛选。</p></div><span class="badge">示例数据</span></div>
+      <div class="driver-filters"><label>搜索司机<input id="driverSearch" type="search" placeholder="姓名、编号、线路或状态"></label><label>线路<select id="driverRoute"><option value="">全部线路</option><option>Route 61</option><option>Route 412</option><option>Route 66</option></select></label><label>出勤<select id="driverAttendance"><option value="">全部状态</option><option value="work">在岗</option><option value="holiday">休假</option></select></label></div>
+      <p class="muted" id="driverCount" role="status">正在加载司机示例…</p><div class="driver-table-wrap"><table class="driver-table"><caption class="sr-only">团队原型虚构司机列表</caption><thead><tr><th scope="col">编号</th><th scope="col">姓名</th><th scope="col">性别</th><th scope="col">示例线路</th><th scope="col">出勤</th></tr></thead><tbody id="driverBody"></tbody></table></div>
+      <p class="muted">原表中的 Route 66 按原样保留，与地图中的 61 / 412 / 475 线路不完全对应。此表不控制仿真车辆，也不代表真实排班。</p>
+    </section>
+    <section id="panel-info" class="workspace-panel" role="tabpanel" aria-labelledby="tab-info" hidden>
+      <div class="panel-heading"><div><h3>资料与功能说明</h3><p>保留原型 Info 的资料展示分区，访客无需提供个人信息。</p></div><span class="badge">访客演示</span></div>
+      <div class="info-grid"><article><i class="fa fa-user-circle-o" aria-hidden="true"></i><h3>访客资料</h3><dl><div><dt>显示名称</dt><dd>Demo Visitor</dd></div><div><dt>演示角色</dt><dd>交通调度观察员</dd></div><div><dt>使用范围</dt><dd>当前浏览器页面</dd></div></dl><p>这里是演示身份，不建立账号，也不收集邮箱、手机号或密码。</p></article>
+      <article><i class="fa fa-shield" aria-hidden="true"></i><h3>账号与安全</h3><p>原团队的登录、个人资料与改密码依赖前端样例数据及 localStorage，不构成服务端身份认证。本在线演示无需登录，也不提供真实改密功能。</p><p>刷新页面会重新开始仿真。导出功能可以保存当前仿真指标。</p></article>
+      <article><i class="fa fa-code" aria-hidden="true"></i><h3>完整项目</h3><p>仓库保留原前后端和安装说明，可在本机运行 Flask / Socket.IO。原实验性“新增路线”依赖后端规则，本演示未移植。</p><a class="button" href="https://github.com/leoz-svg/ez-bus#readme" target="_blank" rel="noopener">查看源码与安装说明 ↗</a></article></div>
+    </section>
     <div class="under-map"><p>人数口径：已生成 = 地图内 + 已上车。自动生成人流沿用原代码的 67 批 × 30 人，共 2,010 人；手动增加会叠加。</p><p>演示新增了暂停、固定种子重置、精确计数和导出。与 Python 使用不同随机数生成器，因此每一步轨迹不完全相同。</p></div>
   </section>
   <section class="section" id="engineering">
@@ -59,6 +86,6 @@
     <div class="engineering-grid"><article><h3>涉及的技术问题</h3><ul><li>经纬度与网格坐标的双向转换。</li><li>人群状态、公交位置与图表数据同步。</li><li>后台线程和调度事件同时修改状态。</li><li>参数检查、空线路处理与失败反馈。</li></ul></article><article><h3>原项目与本次发布</h3><p>保留团队原有前后端，修复同源连接、空数据、越界访问和线程同步等运行问题；另外新增免后端的浏览器演示。</p><p>原版登录使用前端样例数据与 localStorage，不能代表安全认证。本页不收集账号或密码。</p></article><article><h3>关于 AI 与算法</h3><p>这是规则驱动的交通仿真项目，代码未接入大模型、Agent 或 MCP。论文记录的 AI 使用是辅助编程与环境配置。</p><p>原后端的实验线路建议使用阈值判断与 DFS 路径搜索；它不保证全局最短或最优调度，本页未移植该实验功能。</p></article></div>
   </section>
   <section class="section" id="original"><div class="section-heading"><div><p class="eyebrow">03 / ORIGINAL PROJECT</p><h2>回到 2023 年的团队原型</h2></div><span class="muted">以下截图来自提交的项目报告</span></div><div class="figures"><figure><a href="assets/original-dashboard.webp"><img src="assets/original-dashboard.webp" alt="原项目的四个图表：人流、站点分布、线路公交数量及车辆资源" loading="lazy"></a><figcaption>原版 Dashboard · 四个图表组织人流与公交信息。</figcaption></figure><figure><a href="assets/original-map.webp"><img src="assets/original-map.webp" alt="原项目 Leaflet 地图、热力图和公交调度按钮" loading="lazy"></a><figcaption>原版 Leaflet 地图 · 热区、线路、车辆标记与调度操作。</figcaption></figure></div></section>
-  <section class="section last"><div class="section-heading"><div><p class="eyebrow">04 / SCOPE & REPRODUCTION</p><h2>可以复现，也说明边界</h2></div></div><div class="details-grid"><details open><summary>这个模型简化了什么？</summary><p>行人按预设目的站随机移动；公交按离散路线点循环，末尾直接回到起点。到站就可上车，没有座位容量、红绿灯、真实旅行时间或车辆调度约束。道路单元的 80 人阈值约束移动，不限制出生点瞬时人数。不能把演示数字作为真实运营预测。</p></details><details open><summary>如何运行完整前后端？</summary><p>下载 GitHub 仓库，安装 requirements.txt，运行 source/Backend/FLASK.py，访问本机 5000 端口。服务同时提供原前端与 Socket.IO 接口；详细步骤见仓库 README。该服务仅用于本机教学复现。</p></details><details open><summary>团队贡献怎样说明？</summary><p>原项目由 UQ DECO3801 的 ;p Winking 团队完成，Haoran Zheng 是团队成员。本展示保留团队归属；个人具体分工应结合真实经历说明，不将完整系统标为个人独立作品。</p></details><details open><summary>这个网页部署了哪些功能？</summary><p>GitHub Pages 托管静态网页、原项目路网和线路数据；人流与公交规则在浏览器中计算，支持开始、暂停、线路公交增减、追加人流、重置与指标导出。Python 服务、原登录流程与实验线路建议未作为公网服务运行。</p></details></div><div class="actions"><a class="button primary" href="https://github.com/leoz-svg/ez-bus">源码与安装说明 ↗</a><a class="button" href="https://leoz-svg.github.io/ai-project-portfolio/">返回作品集</a></div></section>
+  <section class="section last"><div class="section-heading"><div><p class="eyebrow">04 / SCOPE & REPRODUCTION</p><h2>可以复现，也说明边界</h2></div></div><div class="details-grid"><details open><summary>这个模型简化了什么？</summary><p>行人按预设目的站随机移动；公交按离散路线点循环，末尾直接回到起点。到站就可上车，没有座位容量、红绿灯、真实旅行时间或车辆调度约束。道路单元的 80 人阈值约束移动，不限制出生点瞬时人数。不能把演示数字作为真实运营预测。</p></details><details open><summary>如何运行完整前后端？</summary><p>下载 GitHub 仓库，安装 requirements.txt，运行 source/Backend/FLASK.py，访问本机 5000 端口。服务同时提供原前端与 Socket.IO 接口；详细步骤见仓库 README。该服务仅用于本机教学复现。</p></details><details open><summary>团队贡献怎样说明？</summary><p>原项目由 UQ DECO3801 的 ;p Winking 团队完成，Haoran Zheng 是团队成员。本展示保留团队归属；个人具体分工应结合真实经历说明，不将完整系统标为个人独立作品。</p></details><details open><summary>这个网页部署了哪些功能？</summary><p>GitHub Pages 托管静态网页、原项目路网和线路数据；人流与公交规则在浏览器中计算，支持四分区导航、联动图表、司机示例搜索、地图调度、行人抽样、热区图例与指标导出。Python 服务、原登录流程与实验线路建议未作为公网服务运行。</p></details></div><div class="actions"><a class="button primary" href="https://github.com/leoz-svg/ez-bus">源码与安装说明 ↗</a><a class="button" href="https://leoz-svg.github.io/ai-project-portfolio/">返回作品集</a></div></section>
 </main><footer class="wrap"><span>EZ BUS · ;p Winking Team · UQ DECO3801</span><span>原项目 2023 / 作品集适配 2026</span></footer>
 </body></html>

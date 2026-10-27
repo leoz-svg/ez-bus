@@ -1,8 +1,10 @@
+import {WorkspacePanels} from './panels.mjs';
 import {Simulation} from './engine.mjs';
 import {TransitMap} from './map.mjs';
 const $=id=>document.getElementById(id);
 const colors={61:'#326cbb',412:'#d17b3f',475:'#308771'};
 let network,sim,running=false,timer=null,mapView=null;
+const panels=new WorkspacePanels(()=>{mapView?.map.invalidateSize({pan:false});mapView?.drawHeat();mapView?.drawPeople();});
 function message(text,error=false){$('feedback').textContent=text;$('feedback').classList.toggle('error',error);}
 function update(previous=null,steps=0){
   const s=sim.summary();
@@ -12,6 +14,7 @@ function update(previous=null,steps=0){
   $('stationRows').innerHTML=network.stations.map(([x,y],i)=>`<div class="station-row"><span>S${i+1}</span><b>${sim.counts[x*100+y]} 人</b></div>`).join('');
   $('toggle').textContent=running?'暂停仿真':'开始仿真';$('runState').textContent=running?'运行中':'已暂停';
   mapView.sync(sim,previous,steps);
+  panels.sync(sim,network,running);
 }
 function stop(){clearInterval(timer);timer=null;running=false;}
 function start(){
@@ -30,6 +33,9 @@ $('remove').addEventListener('click',()=>command(()=>sim.removeBus(Number($('rou
 $('people').addEventListener('click',()=>command(()=>sim.addPeople(),'已按原项目的 14 / 2 / 14 分组增加 30 人。'));
 for(const id of ['showHeat','showRoutes'])$(id).addEventListener('change',()=>mapView?.layers($('showHeat').checked,$('showRoutes').checked));
 $('showBuildings').addEventListener('change',()=>mapView?.detailMode($('showBuildings').checked));
+$('heatFocus').addEventListener('change',()=>mapView?.focusHeat($('heatFocus').checked));
+$('showPeople').addEventListener('change',()=>mapView?.peopleMode($('showPeople').checked));
+$('peopleZoom').addEventListener('click',()=>{if(!mapView)return;$('showPeople').checked=true;mapView.peopleMode(true);mapView.zoomToPeople();});
 $('mapHome').addEventListener('click',()=>mapView?.home());
 function selectRoute(id){$('route').value=String(id);mapView?.select(id);document.querySelectorAll('.route-chip').forEach(b=>{b.classList.toggle('selected',Number(b.dataset.route)===id);b.setAttribute('aria-pressed',String(Number(b.dataset.route)===id));});}
 $('route').addEventListener('change',()=>selectRoute(Number($('route').value)));

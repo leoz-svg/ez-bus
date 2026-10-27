@@ -16,7 +16,7 @@ export class TransitMap {
     this.detail=L.layerGroup().addTo(this.map);this.labels=L.layerGroup().addTo(this.map);
     this.routeLayer=L.layerGroup().addTo(this.map);this.stops=[];this.busMarkers=new Map();this.transitions=new Map();
     this.showHeat=true;this.showRoutes=true;this.frame=0;this.sim=null;
-    for(const [name,z] of [['land',210],['buildings',240],['roads',270],['roadLabels',310],['geography',350],['routes',400],['heat',420],['stops',450],['buses',500]]){
+    for(const [name,z] of [['land',210],['buildings',240],['roads',270],['roadLabels',310],['geography',350],['routes',400],['heat',390],['pedestrians',395],['stops',450],['buses',500]]){
       this.map.createPane(name);this.map.getPane(name).style.zIndex=z;
     }
     this.map.getPane('heat').style.pointerEvents='none';this.map.getPane('roadLabels').style.pointerEvents='none';
@@ -32,6 +32,12 @@ export class TransitMap {
     this.paintRoutes();
     this.heatCanvas=L.DomUtil.create('canvas','crowd-overlay',this.map.getPane('heat'));
     this.heatCtx=this.heatCanvas.getContext('2d');
+    this.peopleCanvas=L.DomUtil.create('canvas','pedestrian-overlay',this.map.getPane('pedestrians'));
+    this.peopleCtx=this.peopleCanvas.getContext('2d');this.peopleHistory=new WeakMap();this.peopleSequence=0;this.peopleTracks=[];this.showPeople=false;
+    this.map.getPane('pedestrians').style.pointerEvents='none';
+    this.map.on('moveend zoomend resize',()=>this.drawPeople());
+    this.map.on('zoomstart',()=>{this.peopleCanvas.style.opacity='0';});
+    this.map.on('zoomend',()=>{this.peopleCanvas.style.opacity='1';});
     this.map.on('moveend zoomend resize',()=>{this.drawHeat();this.refreshLabels();});
     this.map.on('zoomstart',()=>{this.heatCanvas.style.opacity='0';});
     this.map.on('zoomend',()=>{this.heatCanvas.style.opacity='1';});
@@ -40,7 +46,7 @@ export class TransitMap {
       marker.bindTooltip(`S${i+1} · 仿真车站`,{direction:'top',className:'stop-tooltip'});
       marker.bindPopup('',{className:'transit-popup'});this.stops.push(marker);
     });
-    this.home();let oldWidth=document.getElementById('map').clientWidth;this.resizeObserver=new ResizeObserver(()=>{this.map.invalidateSize({pan:false});const width=document.getElementById('map').clientWidth;if(Math.abs(width-oldWidth)>10){oldWidth=width;this.home();}});
+    this.home();let oldWidth=document.getElementById('map').clientWidth;this.resizeObserver=new ResizeObserver(()=>{const width=document.getElementById('map').clientWidth;if(!width)return;this.map.invalidateSize({pan:false});if(Math.abs(width-oldWidth)>10){oldWidth=width;this.home();}});
     this.resizeObserver.observe(document.getElementById('map'));
     this.animate();
   }
@@ -103,6 +109,7 @@ export class TransitMap {
   }
   select(id){for(const r of this.routes){r.line.setStyle({weight:r.id===id?4.8:3.5,opacity:r.id===id?1:.65});r.casing.setStyle({weight:r.id===id?8:6.5});} }
   layers(heat,routes){this.showHeat=heat;this.showRoutes=routes;routes?this.routeLayer.addTo(this.map):this.map.removeLayer(this.routeLayer);this.drawHeat();}
+  focusHeat(on){this.heatFocused=on;document.getElementById('map').classList.toggle('heat-focused',on&&this.showHeat);}
   detailMode(on){on?this.basemap.addTo(this.map):this.map.removeLayer(this.basemap);this.updateBasemapStatus();}
   updateBasemapStatus(){
     const el=document.getElementById('mapStatus');
@@ -114,6 +121,14 @@ export class TransitMap {
   }
   sync(sim,previous=null,steps=0){
     this.sim=sim;const alive=new Set();const now=performance.now();
+    // Identity survives filtering/boarding; display jitter never changes the engine RNG.
+    this.peopleTracks=sim.people.map(p=>{
+      const old=this.peopleHistory.get(p),id=old?.id??this.peopleSequence++;
+      const heading=old&&(p.x!==old.x||p.y!==old.y)?Math.atan2((p.y-old.y)*.887,p.x-old.x):old?.heading??0;
+      const next={id,x:p.x,y:p.y,heading};this.peopleHistory.set(p,next);
+      return {...next,fromX:old?.x??p.x,fromY:old?.y??p.y};
+    });
+    this.peopleStarted=now;this.peopleAnimating=true;this.drawPeople(now);
     for(const r of sim.routes){
       const geo=this.network.routes.find(x=>x.id===r.id),points=geo.displayPoints||r.points.map(p=>this.toLatLng(...p));
       r.buses.forEach((pos,i)=>{
@@ -138,19 +153,82 @@ export class TransitMap {
     this.heatCanvas.style.width=size.x+'px';this.heatCanvas.style.height=size.y+'px';
     L.DomUtil.setPosition(this.heatCanvas,this.map.containerPointToLayerPoint([0,0]));
     const c=this.heatCtx;c.setTransform(dpr,0,0,dpr,0,0);
-    if(!this.showHeat||!this.sim)return;
-    for(let i=0;i<this.sim.counts.length;i++){
-      const n=this.sim.counts[i];if(!n)continue;
+    const panel=document.getElementById('heatSummary');panel.classList.toggle('heat-hidden',!this.showHeat);
+    document.getElementById('map').classList.toggle('heat-focused',!!this.heatFocused&&this.showHeat);
+    document.getElementById('heatFocus').disabled=!this.showHeat;
+    if(!this.sim)return;
+    const occupied=[];let peak=0;
+    for(let i=0;i<this.sim.counts.length;i++){const n=this.sim.counts[i];if(n){occupied.push([i,n]);peak=Math.max(peak,n);}}
+    document.getElementById('heatPeak').innerHTML=`${peak} <small>人</small>`;
+    document.getElementById('heatNote').textContent=!this.showHeat?'热区已隐藏':peak?`${occupied.length} 个网格有人`:'暂无人流 · 开始仿真后显示';
+    if(!this.showHeat)return;
+    // Fixed per-cell thresholds, never normalized to each frame's maximum.
+    // Paint low counts first so dense cells remain legible in overlapping halos.
+    occupied.sort((a,b)=>a[1]-b[1]);
+    const projected=this.map.latLngToContainerPoint(this.toLatLng(1,0)).distanceTo(this.map.latLngToContainerPoint(this.toLatLng(0,0)));
+    for(const [i,n] of occupied){
       const p=this.map.latLngToContainerPoint(this.toLatLng(Math.floor(i/100),i%100));
-      if(p.x< -30||p.y< -30||p.x>size.x+30||p.y>size.y+30)continue;
-      const radius=(9+Math.min(15,Math.sqrt(n)*2))*Math.pow(1.5,this.map.getZoom()-16);
+      const radius=Math.min(58,Math.max(17,projected*2.4));
+      if(p.x< -radius||p.y< -radius||p.x>size.x+radius||p.y>size.y+radius)continue;
+      const rgb=n>=80?'153,27,64':n>=30?'226,57,39':n>=10?'246,126,29':'250,195,58';
       const g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
-      g.addColorStop(0,`rgba(218,104,54,${Math.min(.6,.12+n/130)})`);g.addColorStop(.45,'rgba(237,173,71,.2)');g.addColorStop(1,'rgba(237,173,71,0)');
+      g.addColorStop(0,`rgba(${rgb},.88)`);g.addColorStop(.25,`rgba(${rgb},.70)`);
+      g.addColorStop(.60,`rgba(${rgb},.24)`);g.addColorStop(1,`rgba(${rgb},0)`);
       c.fillStyle=g;c.beginPath();c.arc(p.x,p.y,radius,0,Math.PI*2);c.fill();
     }
+    // Small opaque centers preserve the exact category even where halos overlap.
+    for(const [i,n] of occupied){
+      const p=this.map.latLngToContainerPoint(this.toLatLng(Math.floor(i/100),i%100));
+      c.fillStyle=n>=80?'#991b40':n>=30?'#e23927':n>=10?'#f67e1d':'#fac33a';
+      c.beginPath();c.arc(p.x,p.y,Math.max(1.5,Math.min(3,projected*.22)),0,Math.PI*2);c.fill();
+    }
+  }
+
+  peopleMode(on){this.showPeople=on;this.drawPeople();}
+  zoomToPeople(){
+    let cell=6954,peak=0;
+    if(this.sim)for(let i=0;i<this.sim.counts.length;i++)if(this.sim.counts[i]>peak){peak=this.sim.counts[i];cell=i;}
+    this.map.setView(this.toLatLng(Math.floor(cell/100),cell%100),18.25,{animate:false});
+  }
+  drawPeople(now=performance.now()){
+    if(!this.peopleCanvas)return;
+    const size=this.map.getSize(),dpr=Math.min(devicePixelRatio||1,2),canvas=this.peopleCanvas,c=this.peopleCtx;
+    const w=Math.round(size.x*dpr),h=Math.round(size.y*dpr);
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+    canvas.style.width=size.x+'px';canvas.style.height=size.y+'px';
+    L.DomUtil.setPosition(canvas,this.map.containerPointToLayerPoint([0,0]));
+    c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,size.x,size.y);
+    const status=document.getElementById('peopleStatus');
+    const report=text=>{if(status.textContent!==text)status.textContent=text;};
+    if(!this.showPeople){report('行人图层已关闭');return;}
+    if(this.map.getZoom()<18){report('远景显示热区 · 放大至街道级别查看行人');return;}
+    if(!this.peopleTracks.length){report('暂无行人 · 开始仿真或增加一批人流');return;}
+    const f=Math.min(1,Math.max(0,(now-this.peopleStarted)/200));this.peopleAnimating=f<1;
+    const cells=new Map();let visible=0,drawn=0;
+    for(const t of this.peopleTracks){
+      const x=t.fromX+(t.x-t.fromX)*f,y=t.fromY+(t.y-t.fromY)*f;
+      const center=this.map.latLngToContainerPoint(this.toLatLng(x,y));
+      if(center.x<0||center.y<0||center.x>size.x||center.y>size.y)continue;
+      visible++;
+      const key=t.x*100+t.y,n=cells.get(key)||0;if(n>=5||drawn>=600)continue;cells.set(key,n+1);drawn++;
+      // Stable offsets lie inside the simulated grid cell, not arbitrary city positions.
+      const dx=(((t.id*37+11)%101)/100-.5)*.68,dy=(((t.id*61+29)%103)/102-.5)*.68;
+      const p=this.map.latLngToContainerPoint(this.toLatLng(x+dx,y+dy));
+      const scale=Math.min(1.3,.85+(this.map.getZoom()-18)*.25);
+      c.save();c.translate(p.x,p.y);c.rotate(t.heading);c.scale(scale,scale);
+      // Top-down shoulders, head and shoes; compact enough to preserve street context.
+      c.fillStyle='#203f5138';c.beginPath();c.ellipse(1,2,4.3,5.8,0,0,Math.PI*2);c.fill();
+      c.fillStyle='#263b48';c.fillRect(-2.7,2,2,3);c.fillRect(.7,2,2,3);
+      c.fillStyle=['#237c8c','#426c9a','#596583','#317f6b'][t.id%4];
+      c.strokeStyle='#ffffff';c.lineWidth=.8;c.beginPath();c.ellipse(0,0,4,2.9,0,0,Math.PI*2);c.fill();c.stroke();
+      c.fillStyle=['#dfb48d','#c48f6b','#e9c5a1'][t.id%3];c.beginPath();c.arc(0,-2.1,2.2,0,Math.PI*2);c.fill();
+      c.fillStyle='#433f3c';c.beginPath();c.arc(0,-2.6,1.65,Math.PI,Math.PI*2);c.fill();c.restore();
+    }
+    report(visible?`${drawn<visible?'抽样显示':'显示'} ${drawn} / 视野内 ${visible} 人`:'当前视野无行人 · 点击“放大查看人流”定位');
   }
   animate(){
     const now=performance.now();
+    if(this.peopleAnimating&&this.showPeople&&this.map.getZoom()>=18)this.drawPeople(now);
     for(const [key,t] of this.transitions){
       if(t.finished)continue;
       const f=Math.min(1,(now-t.started)/t.duration),n=t.points.length;

@@ -42,3 +42,7 @@ EZ Bus（2023），UQ DECO3801，**;p Winking Team**。
 - docs/assets/map.geojson 是原项目 road_coordinates_100X100.csv 生成的本地道路示意回退，不是 OpenStreetMap 数据。
 - docs/assets/network.json 中 geometry / displayPoints 来源于原线路 CSV，仅用于更平滑的视觉表现。
 - 公交图标由 SVG 代码绘制，不包含车辆品牌或第三方车辆图片。
+
+## 原型分区适配
+
+在线版恢复原团队 Dashboard / Map / Timetable / Info 导航及 Font Awesome 4.7 图标，布局与交互为本次适配。docs/assets/drivers.json 来自原团队 driver-list.js 的 40 条虚构记录。Chart.js 4.4.8 与 MIT 许可复制到 docs/vendor；Font Awesome 4.7 字体和样式复制到 docs/vendor/font-awesome，源样式保留 Font: SIL OFL 1.1 / CSS: MIT 的许可署名及链接。
